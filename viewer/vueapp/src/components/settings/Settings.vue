@@ -100,7 +100,315 @@ clockInterval<template>
         </div>
       </div> <!-- /navigation -->
 
-      <div class="col mt-5">
+      <div class="col">
+
+        <!-- general settings -->
+        <form class="form-horizontal"
+          v-if="visibleTab === 'general'"
+          id="general">
+
+          <h3>General</h3>
+
+          <hr>
+
+          <!-- timezone -->
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label text-right font-weight-bold">
+              Timezone Format
+            </label>
+            <div class="col-sm-9">
+              <div class="btn-group">
+                <b-form-group>
+                  <b-form-radio-group
+                    size="sm"
+                    buttons
+                    @change="updateTime"
+                    v-model="settings.timezone">
+                    <b-radio value="local"
+                      v-b-tooltip.hover
+                      class="btn-radio">
+                      Local
+                    </b-radio>
+                    <b-radio value="gmt"
+                      v-b-tooltip.hover
+                      class="btn-radio">
+                      GMT
+                    </b-radio>
+                  </b-form-radio-group>
+                </b-form-group>
+              </div>
+              <label class="ml-4 text-theme-primary">
+                {{ date | timezoneDateString(settings.timezone, 'YYYY/MM/DD HH:mm:ss z') }}
+              </label>
+            </div>
+          </div> <!-- /timezone -->
+
+          <!-- session detail format -->
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label text-right font-weight-bold">
+              Session Detail Format
+            </label>
+            <div class="col-sm-9">
+              <b-form-group>
+                <b-form-radio-group
+                  size="sm"
+                  buttons
+                  @change="updateSessionDetailFormat"
+                  v-model="settings.detailFormat">
+                  <b-radio value="last"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    Last Used
+                  </b-radio>
+                  <b-radio value="natural"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    Natural
+                  </b-radio>
+                  <b-radio value="ascii"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    ASCII
+                  </b-radio>
+                  <b-radio value="utf8"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    UTF-8
+                  </b-radio>
+                  <b-radio value="hex"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    Hex
+                  </b-radio>
+                </b-form-radio-group>
+              </b-form-group>
+            </div>
+          </div> <!-- /session detail format -->
+
+          <!-- number of packets -->
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label text-right font-weight-bold">
+              Number of Packets
+            </label>
+            <div class="col-sm-9">
+              <b-form-group>
+                <b-form-radio-group
+                  size="sm"
+                  buttons
+                  @change="updateNumberOfPackets"
+                  v-model="settings.numPackets">
+                  <b-radio value="last"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    Last Used
+                  </b-radio>
+                  <b-radio value="50"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    50
+                  </b-radio>
+                  <b-radio value="200"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    200
+                  </b-radio>
+                  <b-radio value="500"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    500
+                  </b-radio>
+                  <b-radio value="1000"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    1,000
+                  </b-radio>
+                  <b-radio value="2000"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    2,000
+                  </b-radio>
+                </b-form-radio-group>
+              </b-form-group>
+            </div>
+          </div> <!-- /number of packets -->
+
+          <!-- show packet timestamp -->
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label text-right font-weight-bold">
+              Show Packet Timestamps
+            </label>
+            <div class="col-sm-9">
+              <b-form-group>
+                <b-form-radio-group
+                  size="sm"
+                  buttons
+                  @change="updateShowPacketTimestamps"
+                  v-model="settings.showTimestamps">
+                  <b-radio value="last"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    Last Used
+                  </b-radio>
+                  <b-radio value="on"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    On
+                  </b-radio>
+                  <b-radio value="off"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    Off
+                  </b-radio>
+                </b-form-radio-group>
+              </b-form-group>
+            </div>
+          </div> <!-- /show packet timestamp -->
+
+          <!-- issue query on initial page load -->
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label text-right font-weight-bold">
+              Issue Query on Page Load
+            </label>
+            <div class="col-sm-9">
+              <b-form-group>
+                <b-form-radio-group
+                  size="sm"
+                  buttons
+                  @change="updateQueryOnPageLoad"
+                  v-model="settings.manualQuery">
+                  <b-radio value="false"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    Yes
+                  </b-radio>
+                  <b-radio value="true"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    No
+                  </b-radio>
+                </b-form-radio-group>
+              </b-form-group>
+            </div>
+          </div> <!-- /issue query on initial page load -->
+
+          <!-- session sort -->
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label text-right font-weight-bold">
+              Sort Sessions By
+            </label>
+            <div class="col-sm-6">
+              <select class="form-control form-control-sm"
+                v-model="settings.sortColumn"
+                @change="update">
+                <option value="last">Last Used</option>
+                <option v-for="field in columns"
+                  :key="field.dbField"
+                  v-if="!field.unsortable"
+                  :value="field.dbField">
+                  {{ field.friendlyName }}
+                </option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <b-form-group>
+                <b-form-radio-group
+                  v-if="settings.sortColumn !== 'last'"
+                  size="sm"
+                  buttons
+                  @change="updateSortDirection"
+                  v-model="settings.sortDirection">
+                  <b-radio value="asc"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    ascending
+                  </b-radio>
+                  <b-radio value="desc"
+                    v-b-tooltip.hover
+                    class="btn-radio">
+                    descending
+                  </b-radio>
+                </b-form-radio-group>
+              </b-form-group>
+            </div>
+          </div> <!-- /session sort -->
+
+          <!-- default spi graph -->
+          <div v-if="fields && settings.spiGraph"
+            class="form-group row">
+            <label class="col-sm-3 col-form-label text-right font-weight-bold">
+              Default SPI Graph
+            </label>
+            <div class="col-sm-6">
+              <moloch-field-typeahead
+                :fields="fields"
+                query-param="field"
+                :initial-value="settings.spiGraph"
+                @fieldSelected="spiGraphFieldSelected">
+              </moloch-field-typeahead>
+            </div>
+            <div class="col-sm-3">
+              <h4>
+                <label class="badge badge-info"
+                  v-b-tooltip.hover
+                  :title="getField(settings.spiGraph).help">
+                  {{ formatField(settings.spiGraph) || 'unknown field' }}
+                </label>
+              </h4>
+            </div>
+          </div> <!-- /default spi graph -->
+
+          <!-- connections src field -->
+          <div v-if="fields && settings.connSrcField"
+            class="form-group row">
+            <label class="col-sm-3 col-form-label text-right font-weight-bold">
+              Connections Src
+            </label>
+            <div class="col-sm-6">
+              <moloch-field-typeahead
+                :fields="fields"
+                query-param="field"
+                :initial-value="settings.connSrcField"
+                @fieldSelected="connSrcFieldSelected">
+              </moloch-field-typeahead>
+            </div>
+            <div class="col-sm-3">
+              <h4>
+                <label class="badge badge-info"
+                  v-b-tooltip.hover
+                  :title="getField(settings.connSrcField).help">
+                  {{ formatField(settings.connSrcField) || 'unknown field' }}
+                </label>
+              </h4>
+            </div>
+          </div> <!-- /connections src field -->
+
+          <!-- connections dst field -->
+          <div v-if="fields && settings.connDstField"
+            class="form-group row">
+            <label class="col-sm-3 col-form-label text-right font-weight-bold">
+              Connections Dst
+            </label>
+            <div class="col-sm-6">
+              <moloch-field-typeahead
+                :fields="fields"
+                query-param="field"
+                :initial-value="settings.connDstField"
+                @fieldSelected="connDstFieldSelected">
+              </moloch-field-typeahead>
+            </div>
+            <div class="col-sm-3">
+              <h4>
+                <label class="badge badge-info"
+                  v-b-tooltip.hover
+                  :title="getField(settings.connDstField).help">
+                  {{ formatField(settings.connDstField) || 'unknown field' }}
+                </label>
+              </h4>
+            </div>
+          </div> <!-- /connections dst field -->
+
+        </form>
+
       </div>
 
     </div> <!-- /content -->
@@ -118,6 +426,7 @@ import customCols from '../sessions/customCols.json';
 import MolochToast from '../utils/Toast';
 import MolochError from '../utils/Error';
 import MolochLoading from '../utils/Loading';
+import MolochFieldTypeahead from '../utils/FieldTypeahead';
 
 let clockInterval;
 
@@ -129,7 +438,7 @@ const defaultColConfig = {
 
 export default {
   name: 'Settings',
-  components: { MolochError, MolochLoading, MolochToast },
+  components: { MolochError, MolochLoading, MolochToast, MolochFieldTypeahead },
   data: function () {
     return {
       error: '',
@@ -162,7 +471,9 @@ export default {
       fields: undefined,
       fieldsMap: undefined,
       fieldsPlus: undefined,
-      columns: []
+      columns: [],
+      settings: {},
+      date: undefined
     };
   },
   created: function () {
@@ -182,8 +493,8 @@ export default {
       .then((response) => {
         this.displayName = response.userId;
         // only admins can edit other users' settings
-        if (response.createEnabled && this.$routeParams.userId) {
-          if (response.userId === this.$routeParams.userId) {
+        if (response.createEnabled && this.$route.query.userId) {
+          if (response.userId === this.$route.query.userId) {
             // admin editing their own user so the routeParam is unnecessary
             // TODO test
             this.$router.push({
@@ -258,9 +569,10 @@ export default {
             this.setupColumns(response.data.visibleHeaders);
             // if the sort column setting does not match any of the visible
             // headers, set the sort column setting to last
-            if (response.data.visibleHeaders.indexOf(this.settings.sortColumn === -1)) {
-              this.settings.sortColumn = 'last';
-            }
+            // TODO
+            // if (response.data.visibleHeaders.indexOf(this.settings.sortColumn === -1)) {
+            //   this.settings.sortColumn = 'last';
+            // }
           })
           .catch(() => {
             this.setupColumns(['firstPacket', 'lastPacket', 'src', 'srcPort', 'dst', 'dstPort', 'totPackets', 'dbby', 'node', 'info']);
@@ -311,8 +623,41 @@ export default {
     },
     /* updates the displayed date for the timzeone setting
      * triggered by the user changing the timezone setting */
-    updateTime: function () {
+    updateTime: function (newTimezone) {
+      this.settings.timezone = newTimezone;
       this.tick();
+      this.update();
+    },
+    updateSessionDetailFormat: function (newDetailFormat) {
+      this.settings.detailFormat = newDetailFormat;
+      this.update();
+    },
+    updateNumberOfPackets: function (newNumPackets) {
+      this.settings.numPackets = newNumPackets;
+      this.update();
+    },
+    updateShowPacketTimestamps: function (newShowTimestamps) {
+      this.settings.showTimestamps = newShowTimestamps;
+      this.update();
+    },
+    updateQueryOnPageLoad: function (newManualQuery) {
+      this.settings.manualQuery = newManualQuery;
+      this.update();
+    },
+    updateSortDirection: function (newSortDirection) {
+      this.settings.sortDirection = newSortDirection;
+      this.update();
+    },
+    spiGraphFieldSelected: function (field) {
+      this.settings.spiGraph = field.dbField;
+      this.update();
+    },
+    connSrcFieldSelected: function (field) {
+      this.settings.connSrcField = field.dbField;
+      this.update();
+    },
+    connDstFieldSelected: function (field) {
+      this.settings.connDstField = field.dbField;
       this.update();
     },
     /**
@@ -321,10 +666,11 @@ export default {
      * @param {string} value The dbField of the field
      */
     formatField: function (value) {
-      // TODO need this?
       for (let i = 0, len = this.fields.length; i < len; i++) {
         if (value === this.fields[i].dbField) {
-          return this.fields[i].exp;
+          // TODO
+          return this.fields[i].friendlyName;
+          // return this.fields[i].exp;
         }
       }
     },
@@ -369,8 +715,7 @@ export default {
     },
     /* updates the date and format for the timezone setting */
     tick: function () {
-      // TODO
-      this.date = new Date();
+      this.date = Math.floor(new Date() / 1000);
       if (this.settings.timezone === 'gmt') {
         this.dateFormat = 'yyyy/MM/dd HH:mm:ss\'Z\'';
       } else {
@@ -381,6 +726,13 @@ export default {
     getSettings: function () {
       UserService.getSettings(this.userId)
         .then((response) => {
+          // set defaults so that radio buttons show the default value
+          if (!response.timezone) { response.timezone = 'local'; }
+          if (!response.detailFormat) { response.detailFormat = 'last'; }
+          if (!response.numPackets) { response.numPackets = 'last'; }
+          if (!response.showTimestamps) { response.showTimestamps = 'last'; }
+          if (!response.manualQuery) { response.manualQuery = false; }
+
           this.settings = response;
           this.loading = false;
 
@@ -502,6 +854,14 @@ export default {
 };
 </script>
 
+<style>
+/* fix dropdown location */
+.settings-page .dropdown-menu.field-typeahead {
+  margin-top: -15px;
+  left: 15px;
+}
+</style>
+
 <style scoped>
 /* settings page, navbar, and content styles - */
 .settings-page {
@@ -509,5 +869,14 @@ export default {
 }
 .settings-content {
   margin-top: 90px;
+}
+
+.settings-page .sub-navbar {
+  z-index: 999;
+}
+
+/* fixed tab buttons */
+.settings-page div.nav-pills {
+  position: fixed;
 }
 </style>

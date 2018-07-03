@@ -84,6 +84,37 @@ export default {
   },
 
   /**
+   * Updates a user's settings
+   * @param {object} settings   The object containing user settings
+   * @param {string} userId     The unique identifier for a user
+   *                            (only required if not the current user)
+   * @returns {Promise} Promise A promise object that signals the completion
+   *                            or rejection of the request.
+   */
+  saveSettings: function (settings, userId) {
+    console.log('settings in user service', settings);
+    return new Promise((resolve, reject) => {
+      let options = {
+        url: 'user/settings/update',
+        method: 'POST',
+        data: settings
+      };
+
+      if (userId) { options.url += `?userId=${userId}`; }
+
+      // update cache
+      _userCache.settings = settings;
+
+      Vue.axios(options)
+        .then((response) => {
+          resolve(response.data);
+        }, (error) => {
+          reject(error.data);
+        });
+    });
+  },
+
+  /**
    * Gets a user's views
    * @param {string} userId     The unique identifier for a user
    *                            (only required if not the current user)

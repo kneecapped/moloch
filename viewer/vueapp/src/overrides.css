@@ -88,12 +88,12 @@
   background-color: var(--color-gray-light);
 }
 
-.nav-pills > li > a {
+.nav-pills > a.nav-link {
   color: var(--color-foreground, #333);
 }
-.nav-pills > li.active > a,
-.nav-pills > li.active > a:hover,
-.nav-pills > li.active > a:focus {
+.nav-pills > a.nav-link.active,
+.nav-pills > a.nav-link.active:hover,
+.nav-pills > a.nav-link.active:focus {
   color           : var(--color-foreground, #FFF);
   background-color: var(--color-primary);
 }
