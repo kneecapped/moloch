@@ -1,4 +1,4 @@
-clockInterval<template>
+<template>
 
   <!-- settings content -->
   <div class="settings-page">
@@ -342,16 +342,16 @@ clockInterval<template>
               <moloch-field-typeahead
                 :fields="fields"
                 query-param="field"
-                :initial-value="settings.spiGraph"
+                :initial-value="spiGraphTypeahead"
                 @fieldSelected="spiGraphFieldSelected">
               </moloch-field-typeahead>
             </div>
             <div class="col-sm-3">
-              <h4>
-                <label class="badge badge-info"
+              <h4 v-if="spiGraphField">
+                <label class="badge badge-info cursor-help"
                   v-b-tooltip.hover
-                  :title="getField(settings.spiGraph).help">
-                  {{ formatField(settings.spiGraph) || 'unknown field' }}
+                  :title="spiGraphField.help">
+                  {{ spiGraphTypeahead || 'unknown field' }}
                 </label>
               </h4>
             </div>
@@ -367,16 +367,16 @@ clockInterval<template>
               <moloch-field-typeahead
                 :fields="fields"
                 query-param="field"
-                :initial-value="settings.connSrcField"
+                :initial-value="connSrcFieldTypeahead"
                 @fieldSelected="connSrcFieldSelected">
               </moloch-field-typeahead>
             </div>
             <div class="col-sm-3">
-              <h4>
-                <label class="badge badge-info"
+              <h4 v-if="connSrcField">
+                <label class="badge badge-info cursor-help"
                   v-b-tooltip.hover
-                  :title="getField(settings.connSrcField).help">
-                  {{ formatField(settings.connSrcField) || 'unknown field' }}
+                  :title="connSrcField.help">
+                  {{ connSrcFieldTypeahead || 'unknown field' }}
                 </label>
               </h4>
             </div>
@@ -390,18 +390,18 @@ clockInterval<template>
             </label>
             <div class="col-sm-6">
               <moloch-field-typeahead
-                :fields="fields"
+                :fields="fieldsPlus"
                 query-param="field"
-                :initial-value="settings.connDstField"
+                :initial-value="connDstFieldTypeahead"
                 @fieldSelected="connDstFieldSelected">
               </moloch-field-typeahead>
             </div>
             <div class="col-sm-3">
-              <h4>
-                <label class="badge badge-info"
+              <h4 v-if="connDstField">
+                <label class="badge badge-info cursor-help"
                   v-b-tooltip.hover
-                  :title="getField(settings.connDstField).help">
-                  {{ formatField(settings.connDstField) || 'unknown field' }}
+                  :title="connDstField.help">
+                  {{ connDstFieldTypeahead || 'unknown field' }}
                 </label>
               </h4>
             </div>
@@ -473,7 +473,13 @@ export default {
       fieldsPlus: undefined,
       columns: [],
       settings: {},
-      date: undefined
+      date: undefined,
+      spiGraphField: undefined,
+      spiGraphTypeahead: undefined,
+      connSrcField: undefined,
+      connSrcFieldTypeahead: undefined,
+      connDstField: undefined,
+      connDstFieldTypeahead: undefined
     };
   },
   created: function () {
@@ -543,11 +549,13 @@ export default {
     FieldService.get(true)
       .then((response) => {
         this.fields = response;
-        this.fieldsPlus = response;
+        this.fieldsPlus = JSON.parse(JSON.stringify(response));
         this.fieldsPlus.push({
           dbField: 'ip.dst:port',
           exp: 'ip.dst:port',
-          help: 'Destination IP:Destination Port'
+          help: 'Destination IP:Destination Port',
+          group: 'general',
+          friendlyName: 'Dst IP:Dst Port'
         });
 
         // add custom columns to the fields array
@@ -569,7 +577,7 @@ export default {
             this.setupColumns(response.data.visibleHeaders);
             // if the sort column setting does not match any of the visible
             // headers, set the sort column setting to last
-            // TODO
+            // TODO this always sets the sortColumn setting to last
             // if (response.data.visibleHeaders.indexOf(this.settings.sortColumn === -1)) {
             //   this.settings.sortColumn = 'last';
             // }
@@ -649,15 +657,21 @@ export default {
       this.update();
     },
     spiGraphFieldSelected: function (field) {
+      this.spiGraphTypeahead = field.friendlyName;
       this.settings.spiGraph = field.dbField;
+      this.spiGraphField = field;
       this.update();
     },
     connSrcFieldSelected: function (field) {
+      this.connSrcFieldTypeahead = field.friendlyName;
       this.settings.connSrcField = field.dbField;
+      this.connSrcField = field;
       this.update();
     },
     connDstFieldSelected: function (field) {
+      this.connDstFieldTypeahead = field.friendlyName;
       this.settings.connDstField = field.dbField;
+      this.connDstField = field;
       this.update();
     },
     /**
@@ -732,6 +746,23 @@ export default {
           if (!response.numPackets) { response.numPackets = 'last'; }
           if (!response.showTimestamps) { response.showTimestamps = 'last'; }
           if (!response.manualQuery) { response.manualQuery = false; }
+
+          // dbField is saved in settings, but show the field's friendlyName
+          for (let i = 0, len = this.fieldsPlus.length; i < len; i++) {
+            let field = this.fieldsPlus[i];
+            if (response.spiGraph === field.dbField) {
+              this.spiGraphField = field;
+              this.spiGraphTypeahead = field.friendlyName;
+            }
+            if (response.connSrcField === field.dbField) {
+              this.connSrcField = field;
+              this.connSrcFieldTypeahead = field.friendlyName;
+            }
+            if (response.connDstField === field.dbField) {
+              this.connDstField = field;
+              this.connDstFieldTypeahead = field.friendlyName;
+            }
+          }
 
           this.settings = response;
           this.loading = false;
@@ -832,11 +863,7 @@ export default {
      * @returns {object} field The field that corresponds to the entered dbField
      */
     getField: function (dbField) {
-      for (let i = 0, len = this.fields.length; i < len; i++) {
-        if (dbField === this.fields[i].dbField) {
-          return this.fields[i];
-        }
-      }
+      return this.fieldsMap[dbField];
     },
     /* THEMES -------------------------------------------------------------- */
     setTheme: function () {
