@@ -210,6 +210,109 @@ export default {
   },
 
   /**
+   * Gets a user's cron queries
+   * @param {string} userId     The unique identifier for a user
+   *                            (only required if not the current user)
+   * @returns {Promise} Promise A promise object that signals the completion
+   *                            or rejection of the request.
+   */
+  getCronQueries: function (userId) {
+    return new Promise((resolve, reject) => {
+      let options = { url: 'user/cron', method: 'GET' };
+
+      if (userId) { options.url += `?userId=${userId}`; }
+
+      Vue.axios(options)
+        .then((response) => {
+          resolve(response.data);
+        }, (error) => {
+          reject(error.data);
+        });
+    });
+  },
+
+  /**
+   * Creates a specified cron query for a user
+   * @param {Object} data       The cron query data to pass to the server
+   * @param {string} userId     The unique identifier for a user
+   *                            (only required if not the current user)
+   * @returns {Promise} Promise A promise object that signals the completion
+   *                            or rejection of the request.
+   */
+  createCronQuery: function (data, userId) {
+    return new Promise((resolve, reject) => {
+      let options = {
+        url: 'user/cron/create',
+        method: 'POST',
+        data: data
+      };
+
+      if (userId) { options.url += `?userId=${userId}`; }
+
+      Vue.axios(options)
+        .then((response) => {
+          resolve(response.data);
+        }, (error) => {
+          reject(error.data);
+        });
+    });
+  },
+
+  /**
+   * Deletes a user's specified cron query
+   * @param {string} key        The key of the cron query to be removed
+   * @param {string} userId     The unique identifier for a user
+   *                            (only required if not the current user)
+   * @returns {Promise} Promise A promise object that signals the completion
+   *                            or rejection of the request.
+   */
+  deleteCronQuery: function (key, userId) {
+    return new Promise((resolve, reject) => {
+      let options = {
+        url: 'user/cron/delete',
+        method: 'POST',
+        data: { key: key }
+      };
+
+      if (userId) { options.url += `?userId=${userId}`; }
+
+      Vue.axios(options)
+        .then((response) => {
+          resolve(response.data);
+        }, (error) => {
+          reject(error.data);
+        });
+    });
+  },
+
+  /**
+   * Updates a specified cron query for a user
+   * @param {Object} data       The cron query data to pass to the server
+   * @param {string} userId     The unique identifier for a user
+   *                            (only required if not the current user)
+   * @returns {Promise} Promise A promise object that signals the completion
+   *                            or rejection of the request.
+   */
+  updateCronQuery: function (data, userId) {
+    return new Promise((resolve, reject) => {
+      let options = {
+        url: 'user/cron/update',
+        method: 'POST',
+        data: data
+      };
+
+      if (userId) { options.url += `?userId=${userId}`; }
+
+      Vue.axios(options)
+        .then((response) => {
+          resolve(response.data);
+        }, (error) => {
+          reject(error.data);
+        });
+    });
+  },
+
+  /**
    * Gets a user's custom column configurations
    * @param {string} userId     The unique identifier for a user
    *                            (only required if not the current user)
