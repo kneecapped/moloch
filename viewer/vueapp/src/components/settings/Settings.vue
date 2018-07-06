@@ -35,8 +35,8 @@
     <!-- page error -->
     <moloch-error
       v-if="error"
-      :message="error"
-      class="mt-5 mb-5">
+      :message-html="error"
+      class="settings-error">
     </moloch-error> <!-- /page error -->
 
     <!-- content -->
@@ -635,22 +635,21 @@ export default {
         if (response.createEnabled && this.$route.query.userId) {
           if (response.userId === this.$route.query.userId) {
             // admin editing their own user so the routeParam is unnecessary
-            // TODO test
             this.$router.push({
+              hash: this.$route.hash,
               query: {
                 ...this.$route.query,
                 userId: undefined
               }
             });
           } else { // admin editing another user
-            // TODO test
             this.userId = this.$route.query.userId;
             this.displayName = this.$route.query.userId;
           }
         } else { // normal user has no permission, so remove the routeParam
           // (even if it's their own userId because it's unnecessary)
-          // TODO test
           this.$router.push({
+            hash: this.$route.hash,
             query: {
               ...this.$route.query,
               userId: undefined
@@ -710,10 +709,9 @@ export default {
             this.setupColumns(response.data.visibleHeaders);
             // if the sort column setting does not match any of the visible
             // headers, set the sort column setting to last
-            // TODO this always sets the sortColumn setting to last
-            // if (response.data.visibleHeaders.indexOf(this.settings.sortColumn === -1)) {
-            //   this.settings.sortColumn = 'last';
-            // }
+            if (response.data.visibleHeaders.indexOf(this.settings.sortColumn) === -1) {
+              this.settings.sortColumn = 'last';
+            }
           })
           .catch(() => {
             this.setupColumns(['firstPacket', 'lastPacket', 'src', 'srcPort', 'dst', 'dstPort', 'totPackets', 'dbby', 'node', 'info']);
@@ -831,9 +829,7 @@ export default {
     formatField: function (value) {
       for (let i = 0, len = this.fields.length; i < len; i++) {
         if (value === this.fields[i].dbField) {
-          // TODO
           return this.fields[i].friendlyName;
-          // return this.fields[i].exp;
         }
       }
     },
@@ -1021,7 +1017,14 @@ export default {
         })
         .catch((error) => {
           this.loading = false;
-          this.error = error.data.text;
+          if (error.text === 'User not found') {
+            this.error = `<div class="text-center">
+                            ${error.text}
+                            <small><a href="settings">View your own settings?</a></small>
+                          </div>`;
+          } else {
+            this.error = error.text;
+          }
           this.displayName = '';
         });
     },
@@ -1159,5 +1162,10 @@ export default {
 /* make sure the form is taller than the nav pills */
 .settings-page form {
   min-height: 280px;
+}
+
+.settings-page .settings-error {
+  margin-top: 6rem;
+  margin-bottom: 1rem;
 }
 </style>
