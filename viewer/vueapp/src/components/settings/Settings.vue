@@ -137,7 +137,7 @@
                   </b-form-radio-group>
                 </b-form-group>
               </div>
-              <label class="ml-4 text-theme-primary">
+              <label class="ml-4 font-weight-bold text-theme-primary">
                 {{ date | timezoneDateString(settings.timezone, 'YYYY/MM/DD HH:mm:ss z') }}
               </label>
             </div>
@@ -407,7 +407,132 @@
             </div>
           </div> <!-- /connections dst field -->
 
-        </form>
+        </form> <!-- / general settings -->
+
+        <!-- view settings -->
+        <form v-if="visibleTab === 'views'"
+          id="views"
+          class="form-horizontal">
+
+          <h3>Views</h3>
+
+          <p>
+             Saved views provide an easier method to specify common base queries
+             and can be activated in the search bar.
+          </p>
+
+          <hr>
+
+          <table class="table table-striped table-sm">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Expression</th>
+                <th>&nbsp;</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- views -->
+              <tr v-for="(item, key) in views"
+                @keyup.enter="updateView(key)"
+                @keyup.esc="cancelViewChange(key)"
+                :key="key">
+                <td>
+                  <input type="text"
+                    maxlength="20"
+                    v-model="item.name"
+                    @input="viewChanged(key)"
+                    class="form-control form-control-sm"
+                  />
+                </td>
+                <td>
+                  <input type="text"
+                    v-model="item.expression"
+                    @input="viewChanged(key)"
+                    class="form-control form-control-sm"
+                  />
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm pull-right"
+                    v-if="item.changed">
+                    <button type="button"
+                      v-b-tooltip.hover
+                      @click="updateView(key)"
+                      title="Save changes to this view"
+                      class="btn btn-theme-tertiary">
+                      <span class="fa fa-save">
+                      </span>
+                    </button>
+                    <button type="button"
+                      v-b-tooltip.hover
+                      class="btn btn-warning"
+                      @click="cancelViewChange(key)"
+                      title="Undo changes to this view">
+                      <span class="fa fa-ban">
+                      </span>
+                    </button>
+                  </div>
+                  <button v-else
+                    type="button"
+                    class="btn btn-sm btn-danger pull-right"
+                    @click="deleteView(key)">
+                    <span class="fa fa-trash-o">
+                    </span>&nbsp;
+                    Delete
+                  </button>
+                </td>
+              </tr> <!-- /views -->
+              <!-- view list error -->
+              <tr v-if="viewListError">
+                <td colspan="3">
+                  <p class="text-danger mb-0">
+                    <span class="fa fa-exclamation-triangle">
+                    </span>&nbsp;
+                    {{ viewListError }}
+                  </p>
+                </td>
+              </tr> <!-- /view list error -->
+              <!-- new view form -->
+              <tr @keyup.enter="createView">
+                <td>
+                  <input type="text"
+                    maxlength="20"
+                    v-model="newViewName"
+                    class="form-control form-control-sm"
+                    placeholder="Enter a new view name (20 chars or less)"
+                  />
+                </td>
+                <td>
+                  <input type="text"
+                    v-model="newViewExpression"
+                    class="form-control form-control-sm"
+                    placeholder="Enter a new view expression"
+                  />
+                </td>
+                <td>
+                  <button class="btn btn-theme-tertiary btn-sm pull-right"
+                    type="button"
+                    @click="createView()">
+                    <span class="fa fa-plus-circle">
+                    </span>&nbsp;
+                    Create
+                  </button>
+                </td>
+              </tr> <!-- /new view form -->
+              <!-- view form error -->
+              <tr v-if="viewFormError">
+                <td colspan="3">
+                  <p class="text-danger mb-0">
+                    <span class="fa fa-exclamation-triangle">
+                    </span>&nbsp;
+                    {{ viewFormError }}
+                  </p>
+                </td>
+              </tr> <!-- /view form error -->
+            </tbody>
+          </table>
+
+        </form> <!-- /view settings -->
 
       </div>
 
@@ -441,12 +566,33 @@ export default {
   components: { MolochError, MolochLoading, MolochToast, MolochFieldTypeahead },
   data: function () {
     return {
+      // page vars
       error: '',
       loading: true,
       msg: '',
       msgType: undefined,
       displayName: undefined,
       visibleTab: 'general', // default tab
+      settings: {},
+      fields: undefined,
+      fieldsMap: undefined,
+      fieldsPlus: undefined,
+      columns: [],
+      // general settings vars
+      date: undefined,
+      spiGraphField: undefined,
+      spiGraphTypeahead: undefined,
+      connSrcField: undefined,
+      connSrcFieldTypeahead: undefined,
+      connDstField: undefined,
+      connDstFieldTypeahead: undefined,
+      // view settings vars
+      views: {},
+      viewListError: '',
+      viewFormError: '',
+      newViewName: '',
+      newViewExpression: '',
+
       defaultColConfig: defaultColConfig,
       defaultSpiviewConfig: defaultSpiviewConfig,
       newCronQueryProcess: '0',
@@ -459,33 +605,20 @@ export default {
         { name: 'Green on Black', class: 'dark-2-theme' },
         { name: 'Dark Blue', class: 'dark-3-theme' }
       ],
-      views: undefined,
-      viewListError: '',
       cronQueries: undefined,
       cronQueryListError: '',
       colConfigs: undefined,
       colConfigError: '',
       spiviewConfigs: undefined,
       spiviewConfigError: '',
-      molochClusters: {},
-      fields: undefined,
-      fieldsMap: undefined,
-      fieldsPlus: undefined,
-      columns: [],
-      settings: {},
-      date: undefined,
-      spiGraphField: undefined,
-      spiGraphTypeahead: undefined,
-      connSrcField: undefined,
-      connSrcFieldTypeahead: undefined,
-      connDstField: undefined,
-      connDstFieldTypeahead: undefined
+      molochClusters: {}
     };
   },
   created: function () {
     // does the url specify a tab in hash
     let tab = window.location.hash;
     if (tab) { // if there is a tab specified and it's a valid tab
+      tab = tab.replace(/^#/, '');
       if (tab === 'general' || tab === 'views' || tab === 'cron' ||
         tab === 'col' || tab === 'theme' || tab === 'password' ||
         tab === 'spiview') {
@@ -592,8 +725,9 @@ export default {
     /* opens a specific settings tab */
     openView: function (tabName) {
       this.visibleTab = tabName;
-      // TODO test
-      window.location.hash = tabName;
+      this.$router.push({
+        hash: tabName
+      });
     },
     /* remove the message when user is done with it or duration ends */
     messageDone: function () {
@@ -606,7 +740,6 @@ export default {
      * @param updateTheme whether to update the UI theme
      */
     update: function (updateTheme) {
-      // TODO test
       UserService.saveSettings(this.settings, this.userId)
         .then((response) => {
           // display success message to user
@@ -674,6 +807,22 @@ export default {
       this.connDstField = field;
       this.update();
     },
+    /* starts the clock for the timezone setting */
+    startClock: function () {
+      this.tick();
+      clockInterval = setInterval(() => {
+        this.tick();
+      }, 1000);
+    },
+    /* updates the date and format for the timezone setting */
+    tick: function () {
+      this.date = Math.floor(new Date() / 1000);
+      if (this.settings.timezone === 'gmt') {
+        this.dateFormat = 'yyyy/MM/dd HH:mm:ss\'Z\'';
+      } else {
+        this.dateFormat = 'yyyy/MM/dd HH:mm:ss';
+      }
+    },
     /**
      * Displays the field.exp instead of field.dbField in the
      * field typeahead inputs
@@ -687,6 +836,122 @@ export default {
           // return this.fields[i].exp;
         }
       }
+    },
+    /* VIEWS ------------------------------------------- */
+    /* creates a view given the view name and expression */
+    createView: function () {
+      if (!this.newViewName || this.newViewName === '') {
+        this.viewFormError = 'No view name specified.';
+        return;
+      }
+
+      if (!this.newViewExpression || this.newViewExpression === '') {
+        this.viewFormError = 'No view expression specified.';
+        return;
+      }
+
+      let data = {
+        viewName: this.newViewName,
+        expression: this.newViewExpression
+      };
+
+      UserService.createView(data, this.userId)
+        .then((response) => {
+          // add the view to the view list
+          this.views[data.viewName] = {
+            expression: data.expression,
+            name: data.viewName
+          };
+          this.viewFormError = false;
+          // clear the inputs
+          this.newViewName = null;
+          this.newViewExpression = null;
+          // display success message to user
+          this.msg = response.text;
+          this.msgType = 'success';
+        })
+        .catch((error) => {
+          // display error message to user
+          this.msg = error.text;
+          this.msgType = 'danger';
+        });
+    },
+    /**
+     * Deletes a view given its name
+     * @param {string} name The name of the view to delete
+     */
+    deleteView: function (name) {
+      UserService.deleteView(name, this.userId)
+        .then((response) => {
+          // remove the view from the view list
+          this.views[name] = null;
+          delete this.views[name];
+          // display success message to user
+          this.msg = response.text;
+          this.msgType = 'success';
+        })
+        .catch((error) => {
+          // display error message to user
+          this.msg = error.text;
+          this.msgType = 'danger';
+        });
+    },
+    /**
+     * Sets a view as having been changed
+     * @param {string} key The unique id of the changed view
+     */
+    viewChanged: function (key) {
+      this.views[key].changed = true;
+    },
+    /**
+     * Cancels a view change by retrieving the view
+     * @param {string} key The unique id of the view
+     */
+    cancelViewChange: function (key) {
+      UserService.getViews(this.userId)
+        .then((response) => {
+          this.views[key] = response[key];
+        })
+        .catch((error) => {
+          this.viewListError = error.text;
+        });
+    },
+    /**
+     * Updates a view
+     * @param {string} key The unique id of the view to update
+     */
+    updateView: function (key) {
+      let data = this.views[key];
+
+      if (!data) {
+        this.msg = 'Could not find corresponding view';
+        this.msgType = 'danger';
+        return;
+      }
+
+      if (!data.changed) {
+        this.msg = 'This view has not changed';
+        this.msgType = 'warning';
+        return;
+      }
+
+      data.key = key;
+
+      UserService.updateView(data, this.userId)
+        .then((response) => {
+          // update view list
+          this.views = response.views;
+          // display success message to user
+          this.msg = response.text;
+          this.msgType = 'success';
+          // set the view as unchanged
+          data.changed = false;
+        })
+        .catch((error) => {
+          // display error message to user
+          this.msg = error.text;
+          this.msgType = 'danger';
+        });
     },
     /* helper functions ---------------------------------------------------- */
     /* retrievs the theme colors from the document body's property values */
@@ -719,22 +984,6 @@ export default {
     },
     setThemeString: function () {
       this.themeString = `${this.background},${this.foreground},${this.foregroundAccent},${this.primary},${this.primaryLightest},${this.secondary},${this.secondaryLightest},${this.tertiary},${this.tertiaryLightest},${this.quaternary},${this.quaternaryLightest},${this.water},${this.land},${this.src},${this.dst}`;
-    },
-    /* starts the clock for the timezone setting */
-    startClock: function () {
-      this.tick();
-      clockInterval = setInterval(() => {
-        this.tick();
-      }, 1000);
-    },
-    /* updates the date and format for the timezone setting */
-    tick: function () {
-      this.date = Math.floor(new Date() / 1000);
-      if (this.settings.timezone === 'gmt') {
-        this.dateFormat = 'yyyy/MM/dd HH:mm:ss\'Z\'';
-      } else {
-        this.dateFormat = 'yyyy/MM/dd HH:mm:ss';
-      }
     },
     /* retrieves the specified user's settings */
     getSettings: function () {
@@ -899,11 +1148,16 @@ export default {
 }
 
 .settings-page .sub-navbar {
-  z-index: 999;
+  z-index: 2;
 }
 
 /* fixed tab buttons */
 .settings-page div.nav-pills {
   position: fixed;
+}
+
+/* make sure the form is taller than the nav pills */
+.settings-page form {
+  min-height: 280px;
 }
 </style>

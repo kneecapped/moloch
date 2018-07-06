@@ -182,6 +182,34 @@ export default {
   },
 
   /**
+   * Updates a specified view for a user
+   * @param {Object} data       The view data to pass to the server
+   * @param {string} userId     The unique identifier for a user
+   *                            (only required if not the current user)
+   * @returns {Promise} Promise A promise object that signals the completion
+   *                            or rejection of the request.
+   */
+  updateView: function (data, userId) {
+    return new Promise((resolve, reject) => {
+      let options = {
+        url: 'user/views/update',
+        method: 'POST',
+        data: data
+      };
+
+      if (userId) { options.url += `?userId=${userId}`; }
+
+      Vue.axios(options)
+        .then((response) => {
+          response.data.views = this.parseViews(response.data.views);
+          resolve(response.data);
+        }, (error) => {
+          reject(error.data);
+        });
+    });
+  },
+
+  /**
    * Gets a user's custom column configurations
    * @param {string} userId     The unique identifier for a user
    *                            (only required if not the current user)
